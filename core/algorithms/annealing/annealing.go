@@ -9,26 +9,32 @@ import (
 )
 
 type Config struct {
-	N, M                   int
-	T, Dt                  float64
-	Alpha1, Alpha2, Alpha3 float64
-	G                      float64
-	StepSize               float64
-	Cylinders              []domain.Cylinder
-	Window                 domain.Window
-	InitialTemperature     float64
-	InitialState           domain.State
-	InitialControls        []domain.Control
+	NumIterations      int
+	StepSize           float64
+	InitialTemperature float64
+	InitialState       domain.State
+	InitialControls    []domain.Control
 }
 
 type Annealing struct {
-	config Config
+	config  Config
+	problem problem
+}
+
+type problem interface {
+	Cost(state domain.State, controls []domain.Control) float64
+}
+
+func New(config Config) *Annealing {
+	return &Annealing{
+		config: config,
+	}
 }
 
 // Optimize запуск алгоритма оптимизации
-func (a *Annealing) Optimize(problem domain.Problem) domain.Output {
+func (a *Annealing) Optimize() domain.Output {
 	bestControls := a.config.InitialControls
-	bestScore := problem.Cost(a.config.InitialState, bestControls)
+	bestScore := a.problem.Cost(a.config.InitialState, bestControls)
 
 	currentControls := bestControls
 	currentScore := bestScore
@@ -37,11 +43,11 @@ func (a *Annealing) Optimize(problem domain.Problem) domain.Output {
 		return a.config.InitialTemperature / (1 + 0.01*float64(iter))
 	}
 
-	for i := 0; i < a.config.N; i++ {
+	for i := 0; i < a.config.NumIterations; i++ {
 		t := temperature(i)
 
 		candidateControls := GetNeighbor(currentControls, a.config.StepSize)
-		candidateScore := problem.Cost(a.config.InitialState, currentControls)
+		candidateScore := a.problem.Cost(a.config.InitialState, currentControls)
 
 		accept := candidateScore < currentScore ||
 			rand.Float64() < math.Exp((currentScore-candidateScore)/t)
