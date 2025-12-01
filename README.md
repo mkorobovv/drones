@@ -1,2 +1,3 @@
-# drones
+# Drones
 Drone optimal control project
+
