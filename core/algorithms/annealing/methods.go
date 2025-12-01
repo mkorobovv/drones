@@ -24,7 +24,7 @@ func (a *Annealing) Optimize() domain.Output {
 		t := temperature(i)
 
 		candidateControls := GetNeighbor(currentControls, a.config.StepSize)
-		candidateScore := a.costService.Cost(a.config.InitialState, currentControls)
+		candidateScore := a.costService.Cost(a.config.InitialState, candidateControls)
 
 		accept := candidateScore < currentScore ||
 			vars.Seed.Float64() < math.Exp((currentScore-candidateScore)/t)
