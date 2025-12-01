@@ -1,6 +1,8 @@
 package costservice
 
 import (
+	"math"
+
 	"github.com/mkorobovv/drones/core/domain"
 	"github.com/mkorobovv/drones/pkg/mathlib"
 )
@@ -15,22 +17,30 @@ func (c *CostService) Cost(state domain.State, controls []domain.Control) float6
 	states := make([]domain.State, c.config.NumIntervals+1)
 	states[0] = state
 
-	for k := range c.config.NumIntervals {
+	for k := 0; k < c.config.NumIntervals; k++ {
 		states[k+1] = c.RK45Step(states[k], controls[k])
 	}
 
-	for k := range c.config.NumIntervals {
+	for k := 0; k <= c.config.NumIntervals; k++ {
 		for _, cylinder := range c.config.Cylinders {
 			cylinderDistance := cylinder.Distance(states[k][0], states[k][2])
 
-			cylinderPenalty += cylinder.Penalty(cylinderDistance)
+			cylinderPenalty += c.config.CylinderPenalty * cylinder.Penalty(cylinderDistance)
 		}
+	}
 
-		for _, window := range c.config.Windows {
+	for _, window := range c.config.Windows {
+		minDistance := math.Inf(1)
+
+		for k := 0; k <= c.config.NumIntervals; k++ {
 			windowDistance := window.Distance(states[k][0], states[k][2])
 
-			windowPenalty += window.Penalty(windowDistance)
+			if windowDistance < minDistance {
+				minDistance = windowDistance
+			}
 		}
+
+		windowPenalty += c.config.WindowPenalty * window.Penalty(minDistance)
 	}
 
 	terminalPenalty = c.config.TerminalPenalty * mathlib.EuclideanDistance(states[c.config.NumIntervals], c.config.TerminalState)
