@@ -25,9 +25,10 @@ type problem interface {
 	Cost(state domain.State, controls []domain.Control) float64
 }
 
-func New(config Config) *Annealing {
+func New(config Config, problem problem) *Annealing {
 	return &Annealing{
-		config: config,
+		config:  config,
+		problem: problem,
 	}
 }
 
