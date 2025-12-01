@@ -2,56 +2,32 @@ package annealing
 
 import (
 	"math"
-	"math/rand"
 
 	"github.com/mkorobovv/drones/core/domain"
+	"github.com/mkorobovv/drones/core/vars"
 	"github.com/mkorobovv/drones/pkg/mathlib"
 )
-
-type Config struct {
-	NumIterations      int
-	StepSize           float64
-	InitialTemperature float64
-	InitialState       domain.State
-	InitialControls    []domain.Control
-}
-
-type Annealing struct {
-	config  Config
-	problem problem
-}
-
-type problem interface {
-	Cost(state domain.State, controls []domain.Control) float64
-}
-
-func New(config Config, problem problem) *Annealing {
-	return &Annealing{
-		config:  config,
-		problem: problem,
-	}
-}
 
 // Optimize запуск алгоритма оптимизации
 func (a *Annealing) Optimize() domain.Output {
 	bestControls := a.config.InitialControls
-	bestScore := a.problem.Cost(a.config.InitialState, bestControls)
+	bestScore := a.costService.Cost(a.config.InitialState, bestControls)
 
 	currentControls := bestControls
 	currentScore := bestScore
 
-	temperature := func(iter int) float64 {
-		return a.config.InitialTemperature / (1 + 0.01*float64(iter))
+	temperature := func(i int) float64 {
+		return a.config.InitialTemperature / (1 + 0.01*float64(i))
 	}
 
-	for i := 0; i < a.config.NumIterations; i++ {
+	for i := range a.config.NumIterations {
 		t := temperature(i)
 
 		candidateControls := GetNeighbor(currentControls, a.config.StepSize)
-		candidateScore := a.problem.Cost(a.config.InitialState, currentControls)
+		candidateScore := a.costService.Cost(a.config.InitialState, currentControls)
 
 		accept := candidateScore < currentScore ||
-			rand.Float64() < math.Exp((currentScore-candidateScore)/t)
+			vars.Seed.Float64() < math.Exp((currentScore-candidateScore)/t)
 
 		if accept {
 			currentControls = candidateControls
@@ -76,7 +52,7 @@ func GetNeighbor(controls []domain.Control, stepSize float64) []domain.Control {
 
 	for i := range controls {
 		for j := 0; j < 4; j++ {
-			neighbor[i][j] = controls[i][j] + rand.NormFloat64()*stepSize
+			neighbor[i][j] = controls[i][j] + vars.Seed.NormFloat64()*stepSize
 		}
 
 		// Ограничения на управление

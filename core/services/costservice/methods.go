@@ -35,31 +35,31 @@ func (c *CostService) Cost(state domain.State, controls []domain.Control) float6
 
 	terminalPenalty = c.config.TerminalPenalty * mathlib.EuclideanDistance(states[c.config.NumIntervals], c.config.TerminalState)
 
-	return terminalPenalty + cylinderPenalty + windowPenalty
+	return c.config.RK45Step*float64(c.config.NumIntervals) + terminalPenalty + cylinderPenalty + windowPenalty
 }
 
 func (c *CostService) RK45Step(state domain.State, control domain.Control) domain.State {
 	var newState domain.State
 
-	k1 := c.dynamics.Model(state, control)
+	k1 := c.dynamicsFunc(state, control)
 
 	for i := 0; i < len(state); i++ {
 		newState[i] = state[i] + 0.5*c.config.RK45Step*k1[i]
 	}
 
-	k2 := c.dynamics.Model(newState, control)
+	k2 := c.dynamicsFunc(newState, control)
 
 	for i := 0; i < len(state); i++ {
 		newState[i] = state[i] + 0.5*c.config.RK45Step*k2[i]
 	}
 
-	k3 := c.dynamics.Model(newState, control)
+	k3 := c.dynamicsFunc(newState, control)
 
 	for i := 0; i < len(state); i++ {
 		newState[i] = state[i] + c.config.RK45Step*k3[i]
 	}
 
-	k4 := c.dynamics.Model(newState, control)
+	k4 := c.dynamicsFunc(newState, control)
 
 	var finalState domain.State
 

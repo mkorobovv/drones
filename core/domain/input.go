@@ -1,13 +1,17 @@
 package domain
 
 type Input struct {
-	N, M                   int
-	NumIntervals           int
-	NumIterations          int
-	T, Dt                  float64
-	Alpha1, Alpha2, Alpha3 float64
-	Cylinders              []Cylinder
-	Window                 Window
-	InitialState           State
-	InitialControls        []Control
+	NumIntervals       int
+	NumIterations      int
+	InitialTemperature float64
+	Time               float64
+	Cylinders          []Cylinder
+	CylinderPenalty    float64
+	Windows            []Window
+	WindowPenalty      float64
+	TerminalState      State
+	TerminalPenalty    float64
+	StepSize           float64
+	InitialState       State
+	InitialControls    []Control
 }

@@ -20,7 +20,7 @@ func (w Window) Distance(x1, x3 float64) float64 {
 }
 
 func (w Window) Penalty(value float64) float64 {
-	return mathlib.PositivePart(value)
+	return mathlib.Heaviside(value)
 }
 
 type Cylinder struct {
@@ -33,5 +33,5 @@ func (c Cylinder) Distance(x1, x3 float64) float64 {
 }
 
 func (c Cylinder) Penalty(value float64) float64 {
-	return mathlib.PositivePart(value)
+	return mathlib.Heaviside(value)
 }

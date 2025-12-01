@@ -17,17 +17,15 @@ type Config struct {
 }
 
 type CostService struct {
-	config   Config
-	dynamics dynamics
+	config       Config
+	dynamicsFunc dynamicsFunc
 }
 
-type dynamics interface {
-	Model(state domain.State, control domain.Control) domain.State
-}
+type dynamicsFunc func(state domain.State, control domain.Control) domain.State
 
-func New(config Config, dynamics dynamics) *CostService {
+func New(config Config, dynamicsFunc dynamicsFunc) *CostService {
 	return &CostService{
-		config:   config,
-		dynamics: dynamics,
+		config:       config,
+		dynamicsFunc: dynamicsFunc,
 	}
 }
