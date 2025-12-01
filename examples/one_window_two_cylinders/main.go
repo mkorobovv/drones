@@ -98,7 +98,7 @@ func FormatResult(x0 domain.State, bestU []domain.Control, bestScore float64) {
 
 	for j := 0; j < 4; j++ {
 		builder.WriteString("\t[")
-		for i := 0; i < 15; i++ {
+		for i := 0; i < len(bestU); i++ {
 			if i > 0 {
 				builder.WriteString(", ")
 			}
