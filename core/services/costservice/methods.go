@@ -14,16 +14,11 @@ func (c *CostService) Cost(state domain.State, controls []domain.Control) float6
 		terminalPenalty float64
 	)
 
-	states := make([]domain.State, c.config.NumIntervals+1)
-	states[0] = state
+	states := c.Trajectory(state, controls)
 
-	for k := 0; k < c.config.NumIntervals; k++ {
-		states[k+1] = c.RK45Step(states[k], controls[k])
-	}
-
-	for k := 0; k <= c.config.NumIntervals; k++ {
+	for _, trajectoryState := range states {
 		for _, cylinder := range c.config.Cylinders {
-			cylinderDistance := cylinder.Distance(states[k][0], states[k][2])
+			cylinderDistance := cylinder.Distance(trajectoryState[0], trajectoryState[2])
 
 			cylinderPenalty += c.config.CylinderPenalty * cylinder.Penalty(cylinderDistance)
 		}
@@ -32,8 +27,8 @@ func (c *CostService) Cost(state domain.State, controls []domain.Control) float6
 	for _, window := range c.config.Windows {
 		minDistance := math.Inf(1)
 
-		for k := 0; k <= c.config.NumIntervals; k++ {
-			windowDistance := window.Distance(states[k][0], states[k][2])
+		for _, trajectoryState := range states {
+			windowDistance := window.Distance(trajectoryState[0], trajectoryState[2])
 
 			if windowDistance < minDistance {
 				minDistance = windowDistance
@@ -46,6 +41,18 @@ func (c *CostService) Cost(state domain.State, controls []domain.Control) float6
 	terminalPenalty = c.config.TerminalPenalty * mathlib.EuclideanDistance(states[c.config.NumIntervals], c.config.TerminalState)
 
 	return c.config.RK45Step*float64(c.config.NumIntervals) + terminalPenalty + cylinderPenalty + windowPenalty
+}
+
+// Trajectory integrates the system dynamics for the provided controls.
+func (c *CostService) Trajectory(state domain.State, controls []domain.Control) []domain.State {
+	states := make([]domain.State, c.config.NumIntervals+1)
+	states[0] = state
+
+	for k := 0; k < c.config.NumIntervals; k++ {
+		states[k+1] = c.RK45Step(states[k], controls[k])
+	}
+
+	return states
 }
 
 func (c *CostService) RK45Step(state domain.State, control domain.Control) domain.State {
