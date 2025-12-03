@@ -18,7 +18,7 @@ import (
 func main() {
 	input := domain.Input{
 		NumIntervals:       15,
-		NumIterations:      1_500_000,
+		NumIterations:      200_000,
 		InitialTemperature: 200,
 		Time:               5.6,
 		Cylinders: []domain.Cylinder{
@@ -77,6 +77,7 @@ func main() {
 	result := annealing.Optimize()
 
 	log.Printf("Optimization took: %v\n", time.Since(start))
+	log.Printf("Optimization result: %v\n", result.BestScore)
 
 	tr := costService.Trajectory(input.InitialState, result.BestControls)
 

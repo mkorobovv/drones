@@ -4,13 +4,6 @@ import (
 	"math"
 )
 
-func PositivePart(value float64) float64 {
-	if value > 0 {
-		return value
-	}
-	return 0
-}
-
 func Heaviside(value float64) float64 {
 	switch {
 	case value > 0:
