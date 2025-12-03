@@ -1,10 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
-	"strings"
+	"os"
 	"time"
 
 	"github.com/mkorobovv/drones/core/algorithms/annealing"
@@ -77,39 +78,37 @@ func main() {
 
 	log.Printf("Optimization took: %v\n", time.Since(start))
 
-	FormatResult(input.InitialState, result.BestControls, result.BestScore)
+	tr := costService.Trajectory(input.InitialState, result.BestControls)
+
+	err := SaveResults(input.InitialState, tr, result.BestControls, result.BestScore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Results saved: %v\n", time.Since(start))
 }
 
-func FormatResult(x0 domain.State, bestU []domain.Control, bestScore float64) {
-	var stateBuilder strings.Builder
-
-	stateBuilder.WriteString("np.array([")
-	for i := range x0 {
-		if i > 0 {
-			stateBuilder.WriteString(", ")
-		}
-		stateBuilder.WriteString(fmt.Sprintf("%v", x0[i]))
-	}
-	stateBuilder.WriteString("])")
-
-	var builder strings.Builder
-
-	builder.WriteString("np.array([\n")
-
-	for j := 0; j < 4; j++ {
-		builder.WriteString("\t[")
-		for i := 0; i < len(bestU); i++ {
-			if i > 0 {
-				builder.WriteString(", ")
-			}
-			builder.WriteString(fmt.Sprintf("%v", bestU[i][j]))
-		}
-		builder.WriteString("],\n")
+func SaveResults(initialState domain.State, trajectory []domain.State, bestControls []domain.Control, bestScore float64) error {
+	output := struct {
+		InitialState domain.State     `json:"initial_state"`
+		Trajectory   []domain.State   `json:"trajectory"`
+		BestControls []domain.Control `json:"best_controls"`
+		BestScore    float64          `json:"best_score"`
+	}{
+		InitialState: initialState,
+		Trajectory:   trajectory,
+		BestControls: bestControls,
+		BestScore:    bestScore,
 	}
 
-	builder.WriteString("])")
+	payload, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marhsal failed: %w", err)
+	}
 
-	fmt.Printf("Начальное состояние: %s\n", stateBuilder.String())
-	fmt.Printf("Лучшее управление: %s\n", builder.String())
-	fmt.Printf("Лучшее значение функционала качества: %f\n", bestScore)
+	if err = os.WriteFile("result.json", payload, 0o644); err != nil {
+		return fmt.Errorf("write file failed: %w", err)
+	}
+
+	return nil
 }
